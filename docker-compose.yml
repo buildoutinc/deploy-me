@@ -1,0 +1,63 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:8.0
+    env_file:
+      - ./.env
+    volumes:
+      - ./volumes/mysql:/var/lib/mysql:delegated
+    environment:
+      MYSQL_DATABASE: 'deployme_dev'
+      MYSQL_USER: 'deployme'
+      MYSQL_PASSWORD: 'deployme_password'
+      MYSQL_ROOT_PASSWORD: 'Th3RootP4ssWord!'
+    ports:
+      - "3306:3306"
+  redis:
+    image: redis:6
+    env_file:
+      - ./.env
+    volumes:
+      - ./volumes/redis:/data
+    ports:
+      - "6379:6379"
+  rails:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    command: ./script/start_rails.sh
+    env_file:
+      - ./.env
+    environment:
+      RUBYOPT: '-W0'
+      RAILS_ENV: 'development'
+      MYSQL_HOST: 'mysql'
+      MYSQL_ROOT_PASSWORD: 'Th3RootP4ssWord!'
+      WAIT_HOSTS: mysql:3306 redis:6379
+    volumes:
+      - .:/opt/buildout:delegated
+    ports:
+      - "3000:3000"
+    links:
+      - mysql
+      - redis
+    depends_on:
+      - mysql
+      - redis
+  sidekiq:
+    image: deploy-me:latest
+    command: ./script/start_sidekiq.sh
+    env_file:
+      - ./.env
+    environment:
+      RUBYOPT: '-W0'
+      RAILS_ENV: 'development'
+      MYSQL_HOST: 'mysql'
+      MYSQL_ROOT_PASSWORD: 'Th3RootP4ssWord!'
+    volumes:
+      - .:/opt/buildout:delegated
+    depends_on:
+      - mysql
+      - redis
