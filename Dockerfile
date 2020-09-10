@@ -12,6 +12,7 @@ RUN apk upgrade --no-cache -U && \
     apk add --no-cache --virtual mysql-client && \
     apk add --no-cache --virtual nodejs && \
     apk add --no-cache --virtual tzdata && \
+    apk add --no-cache --virtual yarn && \
     apk add --no-cache --virtual zlib-dev
 
 RUN mkdir /opt/deploy-me
@@ -20,5 +21,5 @@ WORKDIR /opt/deploy-me
 COPY Gemfile /opt/deploy-me/Gemfile
 COPY Gemfile.lock /opt/deploy-me/Gemfile.lock
 RUN gem install bundler
-RUN bundle install -j 4 --with=test --system
+RUN bundle install -j 4 
 

@@ -1,0 +1,54 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:5.7.28
+    volumes:
+      - ./volumes/mysql:/var/lib/mysql:delegated
+    environment:
+      MYSQL_DATABASE: 'deploy_me_development'
+      MYSQL_USER: 'deploy_me'
+      MYSQL_PASSWORD: 'deploy_me_password'
+      MYSQL_ROOT_PASSWORD: 'super-secret-do-not-tell'
+    ports:
+      - "3306:3306"
+  redis:
+    image: redis:5
+    volumes:
+      - ./volumes/redis:/data
+    ports:
+      - "6379:6379"
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    command: bash -c "yarn && bundle exec rails server"
+    environment:
+      MYSQL_ROOT_PASSWORD: 'super-secret-do-not-tell'
+      MYSQL_HOST: 'mysql'
+      root_url: 'http://rails:3000'
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - .:/opt/deploy-me:delegated
+    ports:
+      - "3000:3000"
+    links:
+      - mysql
+      - redis
+    depends_on:
+      - mysql
+      - redis
+#   jobs:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     command: bash -c "yarn && bundle exec sidekiq"
+#     environment:
+#       RUBYOPT: '-W0'
+#       REDIS_URL: redis://redis:6379
+#     volumes:
+#       - .:/opt/deploy-me:delegated
+#     depends_on:
+#       - mysql
+#       - redis
